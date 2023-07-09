@@ -1,0 +1,89 @@
+﻿@page "/"
+
+@using Telerik.Blazor;
+@using Ecommerce.Models;
+@using System.Collections.ObjectModel
+
+<PageTitle>Products</PageTitle>
+<style>
+    .tabHeight {
+        Height: 525px;
+    }
+
+    .numberCircle {
+        border-radius: 50%;
+        width: 35px;
+        height: 33px;
+        padding: 7px;
+        background: #fff;
+        border: 2px solid #666;
+        color: red;
+        text-align: center;
+        font: 15px Arial, sans-serif;
+    }
+
+    .k-tabstrip-items-wrapper .k-item.k-state-active, .k-tabstrip-items-wrapper .k-item.k-state-selected {
+        color: darkblue;
+        border-color: darkblue;
+        background-color: aliceblue;
+    }
+
+    .k-tabstrip-items-wrapper .k-item {
+        color: black;
+    }
+</style>
+
+<div id="sidenav" style="Height: 525px;">
+    <TelerikTabStrip Class="tabHeight" TabPosition="Telerik.Blazor.TabPosition.Left" ActiveTabIndex="@_activeTabIndex" ActiveTabIndexChanged="@TabChangedIndex">
+        <TabStripTab Title="Products">
+            <div style="float:left;margin-left:10px;margin-top:10px;position:absolute">
+                <ProductDetails SelectedProduct="@AddProductToCart"></ProductDetails>
+            </div>
+        </TabStripTab>
+        <TabStripTab Title="CartDetails">
+            <HeaderTemplate>
+                <Label>CartDetails</Label>&nbsp;&nbsp;
+            </HeaderTemplate>
+            <Content>
+            <div style="float:left;margin-left:10px;margin-top:10px;position:absolute">
+                <CartDetails cartData="@cartDataList"></CartDetails>
+            </div>
+            </Content>
+        </TabStripTab>
+    </TelerikTabStrip>
+ </div>
+
+@code{
+    public int _activeTabIndex = (int)TabIndex.ProductDetails;
+    private ObservableCollection<Product> cartDataList = new ObservableCollection<Product>();
+    private enum TabIndex : short
+    {
+        ProductDetails = 0,
+    }
+
+
+
+    private void TabChangedIndex(int newIndex)
+    {
+        _activeTabIndex = newIndex;
+
+    }
+
+    private async Task AddProductToCart(Product data)
+    {
+        if (data != null)
+        {
+            var existData = cartDataList.Where(c => c.Code == data.Code).ToList();
+            if (existData.Any())
+            {
+                cartDataList.FirstOrDefault(c => c.Code == data.Code).Quantity += data.Quantity;
+            }
+            else 
+            {
+                cartDataList.Add(data);
+            }
+        }
+    }
+ }
+
+

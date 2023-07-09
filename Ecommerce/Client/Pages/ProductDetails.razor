@@ -1,0 +1,114 @@
+﻿@using Ecommerce.Models;
+@using System.Collections.ObjectModel
+@using Ecommerce.BLL.Client;
+@using Newtonsoft.Json;
+
+@inject NavigationManager NavigationManager
+@inject HttpClient Http;
+
+<TelerikGrid Data="@gridData"
+             Height="490px" Width="1135px"
+             Sortable="true"
+             Resizable="true" Reorderable="true"
+             FilterMenuType="FilterMenuType.CheckBoxList"
+             SelectionMode="GridSelectionMode.Multiple"
+             FilterMode="@GridFilterMode.FilterRow"
+             Groupable=" false"
+             RowHeight="40">
+    <GridToolBar>
+        @*<GridCommandButton Command="ExcelExport" Icon="file-excel">Export to Excel</GridCommandButton>*@
+        @*<label class="k-checkbox-label"><TelerikCheckBox @bind-Value="@ExportAllPages" />Export All Pages</label>*@
+        @*<TelerikButton OnClick="@OnClickHandle">Click</TelerikButton>*@
+    </GridToolBar>
+    <GridExport>
+        <GridExcelExport FileName="SAP Upload Status" AllPages="true" />
+    </GridExport>
+    <GridColumns>
+        <GridColumn Field="@(nameof(Product.Code))" Title="Product Code"></GridColumn>
+        <GridColumn Field="@(nameof(Product.Name))" Title="Product Name" />
+        <GridColumn Field="@(nameof(Product.Price))" Title="Price" />
+        <GridColumn Field="@(nameof(Product.Quantity))" Title="Quantity">
+            <Template Context="context">
+                @{
+                    quantitySelection = context as Product;
+                    <label class="k-icon k-i-minus-outline" onclick="@(()=>DecrementCount(quantitySelection))"></label>
+                    <label>@quantitySelection.Quantity</label>
+                    <label class="k-icon k-i-plus-outline" onclick="@(()=>IncrementCount(quantitySelection))"></label>
+
+                }
+            </Template>
+        </GridColumn>
+        <GridColumn Title="">
+            <Template Context="context1">
+                @{
+                    Selection = context1 as Product;
+                    <TelerikButton Icon="shopping-cart" Class="ApproveButton" OnClick="@OnClickAddToCart">AddToCart</TelerikButton>
+                    
+                }
+            </Template>
+        </GridColumn>
+    </GridColumns>
+</TelerikGrid>
+
+@code {
+    public ObservableCollection<Product> gridData { get; set; }
+    private Product Selection = new Product();
+    private Product quantitySelection = new Product();
+    [Parameter]
+    public EventCallback<Product> SelectedProduct { get; set; }
+    public ObservableCollection<Product> quntityChange { get; set; }
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            //gridData = new ObservableCollection<Product>()
+            //{
+            //    new Product{
+            //        Code = "CH1", Name = "Chai", Price = 5.11
+            //    },
+            //    new Product{
+            //        Code = "AP1", Name = "Apple", Price = 5.11
+            //    },
+            //    new Product{
+            //        Code = "MG1", Name = "Mango", Price = 5.11
+            //    }
+            //};
+            gridData = await Http.GetAsyncSafe<ObservableCollection<Product>>("api/Ecommerce/ProductDetails");
+        }
+        catch(Exception ex)
+        {
+
+        }
+    }
+
+    private async Task OnClickAddToCart()
+    {
+        await SelectedProduct.InvokeAsync(Selection);
+        //NavigationManager.NavigateTo("CartDetails");
+    }
+
+    private async Task DecrementCount(Product data)
+    {
+        foreach(var item in gridData)
+        {
+            if(item.Code == data.Code && item.Quantity>1)
+            {
+                item.Quantity = data.Quantity - 1;
+            }
+        }
+    }
+
+    private async Task IncrementCount(Product data)
+    {
+        foreach (var item in gridData)
+        {
+            if (item.Code == data.Code)
+            {
+                item.Quantity = data.Quantity + 1;             
+            }
+        }
+    }
+}

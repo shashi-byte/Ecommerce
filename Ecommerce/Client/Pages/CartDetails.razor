@@ -1,0 +1,185 @@
+﻿
+@using Ecommerce.Models;
+@using System.Collections.ObjectModel
+
+@inject HttpClient Http;
+
+<div>
+    @if (!CartDataChanged.Any())
+    {
+        <h1>Cart is Empty</h1>
+    }
+    else
+    {
+    <div class="row" style="margin-top:10px;width:90vw">
+        <div class="col-2">
+            <label style="text-decoration:underline">Product Code</label>
+        </div>
+        <div class="col-2">
+            <label style="text-decoration:underline">Product Name</label>
+        </div>
+        <div class="col-2">
+            <label style="text-decoration:underline">Quantity</label>
+        </div>
+        <div class="col-2">
+            <label style="text-decoration:underline">Price</label>
+        </div>
+            <div class="col-2">
+            </div>
+    </div>
+    
+    @foreach(var product in CartDataChanged){
+        
+        <div class="row" style="margin-top:10px">
+            <div class="col-2">
+                <label>@product.Code</label>
+            </div>
+            <div class="col-2">
+                <label>@product.Name</label>
+            </div>
+            <div class="col-2">
+                <label>@product.Quantity</label>
+            </div>
+            <div class="col-2">
+                <label>@product.Price</label>
+            </div>
+                <div class="col-2">
+                    <TelerikButton Icon="delete" OnClick="@(() =>DeleteFromCart(product))"></TelerikButton>
+                </div>
+        </div>
+    }
+    <hr />
+    <div>
+        <div>
+            <div style="display: flex;flex-direction: row;justify-content: space-between;">
+            <label>Actual Price :</label>
+            <label style="margin-right:22px">@ActualPrice</label><br/>
+            </div>
+            <div style="display: flex;flex-direction: row;justify-content: space-between;">
+            <label>Discount Price :</label>
+            <label style="margin-right:50px">-@DiscountPrice</label><br />
+            </div>
+        </div>
+        <hr />
+        <div style="display: flex;flex-direction: row;justify-content: space-between">
+            <label>Total Price :</label>
+            <label style="margin-right:10px">@TotalPrice</label><br />
+        </div>
+    </div>
+    }
+</div>
+
+
+
+@code {
+    public ObservableCollection<Product> CartDataChanged { get; set; } = new ObservableCollection<Product>();
+    [Parameter]
+    public ObservableCollection<Product> cartData { get; set; }
+    private Product item = new Product();
+    private double ActualPrice = 0;
+    private double DiscountPrice = 0;
+    private double TotalPrice = 0;
+    private string Coffee = "CF1";
+    private string Apple = "AP1";
+    private string Chai = "CH1";
+    private string Oatmeal = "OM1";
+    private string Milk = "MK1";
+    private bool chaiExists;
+    private bool ChaiMilkExist;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CartDataChanged = cartData;
+        foreach(var item in CartDataChanged)
+        {
+            if(item.Code == Coffee && item.Quantity > 1)
+            {
+                item.DiscountPrice = item.Price * (item.Quantity / 2);
+            }
+            if (item.Code == Apple && item.Quantity > 2)
+            {
+                item.DiscountPrice = 1.50 * item.Quantity;
+            }
+            if(item.Code == Chai)
+            {
+                chaiExists = true;
+            }
+            if(chaiExists)
+            {
+                if(item.Code == Milk)
+                {
+                    ChaiMilkExist = true;
+                }
+
+            }
+            item.ActualPrice = item.Price * item.Quantity;
+            item.TotalPrice = item.ActualPrice - item.DiscountPrice;
+            ActualPrice = ActualPrice + item.ActualPrice;
+            DiscountPrice = DiscountPrice + item.DiscountPrice;
+            TotalPrice = TotalPrice + item.TotalPrice;
+        }
+        if(ChaiMilkExist)
+        {
+            DiscountPrice = DiscountPrice + 4.75;
+            TotalPrice = TotalPrice - 4.75;
+        }
+        ActualPrice = Math.Round(ActualPrice,2);
+        DiscountPrice = Math.Round(DiscountPrice, 2);
+        TotalPrice = Math.Round(TotalPrice, 2);
+        this.StateHasChanged();
+        await base.OnInitializedAsync();
+    }
+
+    private async Task DecrementCount(Product  data)
+    {
+        foreach (var item in CartDataChanged)
+        {
+            if (item.Code == data.Code && item.Quantity > 1)
+            {
+                item.Quantity = data.Quantity - 1;
+            }
+            else if (item.Code == data.Code && item.Quantity == 1)
+            {
+                CartDataChanged.Remove(item);
+            }
+        }
+        await CheckOfferApplied();
+
+    }
+
+    private async Task IncrementCount(Product data)
+    {
+        foreach(var item in CartDataChanged)
+        {
+            if (item.Code == data.Code && item.Quantity >= 1)
+            {
+                item.Quantity = data.Quantity + 1;
+            }
+        }
+        await CheckOfferApplied();
+    }
+
+    private async Task CheckOfferApplied()
+    {
+        foreach(var item in CartDataChanged)
+        {
+            if(item.Quantity>=3)
+            {
+                item.DiscountPrice = -1.50 * item.Quantity;
+            }
+        }
+    }
+
+    private void DeleteFromCart(Product data)
+    {
+        CartDataChanged.Remove(data);
+    }
+
+    private async Task BOGO(Product cartProduct)
+    {
+        if(cartProduct.Code == Coffee)
+        {
+
+        }
+    }
+}
